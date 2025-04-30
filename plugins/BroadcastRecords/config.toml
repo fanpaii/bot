@@ -1,0 +1,20 @@
+[basic]
+# 是否启用插件
+enable = true
+
+# 定时提醒配置（开播前几分钟提醒）
+reminder_minutes = 10
+
+[commands]
+# 插件指令配置
+enable_broadcast = "启用开播记录"
+disable_broadcast = "禁用开播记录"
+register_time = "开播时间"
+set_temp_time = "临时开播时间"
+start_broadcast = "开播"
+end_broadcast = "下播"
+query_records = "查开播记录"
+help_command = "开播记录帮助"
+set_reminder_time = "设置提醒时间"
+reminder_list = "开播提醒列表"
+query_broadcaster = "查询开播" 

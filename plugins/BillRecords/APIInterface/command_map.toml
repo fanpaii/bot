@@ -1,0 +1,155 @@
+[[commands]]
+name = "18+"
+description = "获取R18图片"
+usage = "18+"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "测试图片"
+description = "发送一张测试图片，用于验证图片发送功能"
+usage = "测试图片"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "添加API"
+description = "添加新的API接口"
+usage = "添加API 命令 URL 请求方法 返回类型 描述"
+hidden = false
+admin_only = true
+prefix_required = false
+
+[[commands]]
+name = "删除API"
+description = "删除API接口"
+usage = "删除API 命令"
+hidden = false
+admin_only = true
+prefix_required = false
+
+[[commands]]
+name = "API列表"
+description = "列出所有可用的API接口"
+usage = "API列表"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "白羊"
+description = "获取白羊座运势"
+usage = "白羊"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "金牛"
+description = "获取金牛座运势"
+usage = "金牛"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "双子"
+description = "获取双子座运势"
+usage = "双子"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "巨蟹"
+description = "获取巨蟹座运势"
+usage = "巨蟹"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "狮子"
+description = "获取狮子座运势"
+usage = "狮子"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "处女"
+description = "获取处女座运势"
+usage = "处女"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "天秤"
+description = "获取天秤座运势"
+usage = "天秤"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "天蝎"
+description = "获取天蝎座运势"
+usage = "天蝎"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "射手"
+description = "获取射手座运势"
+usage = "射手"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "摩羯"
+description = "获取摩羯座运势"
+usage = "摩羯"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "水瓶"
+description = "获取水瓶座运势"
+usage = "水瓶"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "双鱼"
+description = "获取双鱼座运势"
+usage = "双鱼"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "短剧"
+description = "搜索短剧"
+usage = "短剧<关键词>"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "显示剩余"
+description = "显示剩余短剧搜索结果"
+usage = "显示剩余"
+hidden = true
+prefix_required = false
+
+[[commands]]
+name = "小说"
+description = "搜索小说"
+usage = "小说<关键词>"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "运势占卜"
+description = "随机获取运势占卜图片"
+usage = "运势占卜"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "运势"
+description = "随机获取运势占卜图片"
+usage = "运势"
+hidden = false
+prefix_required = false 

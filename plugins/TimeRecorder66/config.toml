@@ -1,0 +1,12 @@
+[plugin]
+name = "TimeRecorder66"
+description = "记录群成员66时长的插件"
+version = "1.0.0"
+author = "XYBot开发团队"
+
+[features]
+weekly_report = true
+monthly_report = true
+report_day = 0
+report_hour = 20
+report_minute = 0

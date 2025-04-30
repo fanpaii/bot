@@ -1,0 +1,6 @@
+[GroupWelcome]
+enable = true
+welcome-message = "."
+url = "."
+welcome_reminder_enabled = true
+database_path = "plugins/GroupWelcome/database/group_records.db"

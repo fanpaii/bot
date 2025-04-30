@@ -1,0 +1,11 @@
+[basic]
+# 是否启用插件
+enable = true
+
+[commands]
+# 插件指令配置
+enable_checkin = "启用打卡"
+disable_checkin = "禁用打卡"
+checkin = "打卡"
+set_checkin_time = "设置打卡时间"
+query_checkin = "查打卡记录" 

@@ -1,0 +1,38 @@
+[Dify]
+enable = true          # 是否启用插件
+default-model = "学姐"  # 默认使用的模型
+commands = ["聊天", "AI"]
+chatroom_enable = false  # 是否启用聊天室功能：
+                        # true - 用户@机器人后会自动进入聊天室，之后无需@即可聊天
+                        # false - 每次对话都需要@或使用触发词，不会进入持续聊天模式
+command-tip = """-----XYBot-----
+💬AI聊天指令：
+1. 切换模型（将会一直保持到下次切换）：
+   - @学姐 切换：切换到学姐模型
+2. 临时使用其他模型：
+   - 学姐 消息内容：临时使用学姐模型"""
+admin_ignore = true            # 管理员是否免积分，设为true则管理员不消耗积分使用AI
+whitelist_ignore = true        # 白名单用户是否免积分，设为true则白名单用户不消耗积分
+http-proxy = ""                # HTTP代理配置，格式为"http://代理地址:端口"，不需要则留空
+voice_reply_all = true        # 是否总是使用语音回复，设为true则所有回复都转为语音消息
+robot-names = ["哪吒", "", ""]  # 机器人名称列表
+
+# TTS配置
+[TTS]
+engine = "gtts"              # TTS引擎，使用Google TTS
+voice_reply_all = true       # 是否总是使用语音回复
+lang = "zh-cn"              # 语言，zh-cn为中文
+slow = false                # 是否使用慢速语音
+proxy = ""                  # 代理服务器，格式为"http://代理地址:端口"，不需要则留空
+
+[Dify.models]
+# 学姐模型配置
+[Dify.models."学姐"]
+api-key = "app-3GaXiEur1eQsP1mrSB8BvPIR"
+base-url = "https://api.dify.ai/v1"
+trigger-words = ["@学姐"]
+wakeup-words = ["学姐"]
+price = 0
+
+
+

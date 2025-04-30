@@ -1,0 +1,12 @@
+[basic]
+# 是否启用插件
+enable = true
+
+[commands]
+# 插件指令配置
+revoke_command = "撤回"
+info_command = "信息"
+help_command = "工具帮助"
+everyone_command = "所有人"
+enable_command = "启用工具插件"
+disable_command = "禁用工具插件" 

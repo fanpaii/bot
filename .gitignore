@@ -94,6 +94,12 @@ ipython_config.py
 #   install all needed dependencies.
 #Pipfile.lock
 
+# UV
+#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#uv.lock
+
 # poetry
 #   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
 #   This is especially recommended for binary packages to ensure reproducibility, and is more
@@ -106,8 +112,10 @@ ipython_config.py
 #pdm.lock
 #   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
 #   in version control.
-#   https://pdm.fming.dev/#use-with-ide
+#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
 .pdm.toml
+.pdm-python
+.pdm-build/
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
@@ -158,3 +166,52 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# PyPI configuration file
+.pypirc
+
+# XYBot
+resource/robot_stat.json
+WechatAPI/Client/login_stat.json
+/WechatAPIDocs/_build/doctrees/environment.pickle
+/WechatAPIDocs/_build/doctrees/index.doctree
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/base.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/chatroom.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/friend.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/hongbao.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/login.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/message.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/protect.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/tool.html
+/WechatAPIDocs/_build/html/_modules/WechatAPI/Client/user.html
+/WechatAPIDocs/_build/html/_modules/index.html
+/WechatAPIDocs/_build/html/_sources/index.rst.txt
+/WechatAPIDocs/_build/html/_static/scripts/furo.js
+/WechatAPIDocs/_build/html/_static/scripts/furo.js.LICENSE.txt
+/WechatAPIDocs/_build/html/_static/scripts/furo.js.map
+/WechatAPIDocs/_build/html/_static/scripts/furo-extensions.js
+/WechatAPIDocs/_build/html/_static/styles/furo.css
+/WechatAPIDocs/_build/html/_static/styles/furo.css.map
+/WechatAPIDocs/_build/html/_static/styles/furo-extensions.css
+/WechatAPIDocs/_build/html/_static/styles/furo-extensions.css.map
+/WechatAPIDocs/_build/html/_static/basic.css
+/WechatAPIDocs/_build/html/_static/debug.css
+/WechatAPIDocs/_build/html/_static/doctools.js
+/WechatAPIDocs/_build/html/_static/documentation_options.js
+/WechatAPIDocs/_build/html/_static/file.png
+/WechatAPIDocs/_build/html/_static/language_data.js
+/WechatAPIDocs/_build/html/_static/minus.png
+/WechatAPIDocs/_build/html/_static/plus.png
+/WechatAPIDocs/_build/html/_static/pygments.css
+/WechatAPIDocs/_build/html/_static/searchtools.js
+/WechatAPIDocs/_build/html/_static/skeleton.css
+/WechatAPIDocs/_build/html/_static/sphinx_highlight.js
+/WechatAPIDocs/_build/html/_static/translations.js
+/WechatAPIDocs/_build/html/.buildinfo
+/WechatAPIDocs/_build/html/genindex.html
+/WechatAPIDocs/_build/html/index.html
+/WechatAPIDocs/_build/html/objects.inv
+/WechatAPIDocs/_build/html/py-modindex.html
+/WechatAPIDocs/_build/html/search.html
+/WechatAPIDocs/_build/html/searchindex.js
+!/plugins/update_qr.py

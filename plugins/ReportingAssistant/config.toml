@@ -1,0 +1,31 @@
+[ReportingAssistant]
+# 是否启用插件
+enable = true
+
+# 报备指令
+report_commands = ["报备", "我报备", "报备一下", "开始报备", "bb", "Bb", "bB", "BB"]
+
+# 回来指令
+back_commands = ["回", "h"]
+
+# 管理指令
+admin_commands = [
+    "启用报备", 
+    "禁用报备", 
+    "设置时限", 
+    "启用报备时限", 
+    "禁用报备时限", 
+    "查报备记录", 
+    "启用报备提醒", 
+    "禁用报备提醒", 
+    "提醒分钟", 
+    "设置默认时限", 
+    "设置默认提醒", 
+    "报备设置"
+]
+
+# 默认报备时限（分钟）
+default_time_limit = 120
+
+# 默认提醒时间（分钟）
+default_reminder_minutes = 10 

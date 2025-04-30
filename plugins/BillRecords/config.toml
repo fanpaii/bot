@@ -1,0 +1,10 @@
+[basic]
+# 是否启用插件
+enable = true
+
+[commands]
+# 插件指令配置
+reward_command = "奖励"
+punish_command = "惩罚"
+query_command = "查账单记录"
+help_command = "账单帮助" 

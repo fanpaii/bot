@@ -1,0 +1,67 @@
+[api]
+[api."涩涩"]
+url = "http://ynx.fremoe.site/API/R18_2/"
+method = "get"
+params = { key = "YNX.m2351811802" }
+return_type = "img"
+description = "获取涩涩图片"
+
+[api."18+"]
+url = "https://laterouapi.tonghang.fun/api/R18_2"
+method = "get"
+return_type = "img"
+description = "获取R18图片"
+send_type = "base64"
+
+[api."解乏"]
+url = "https://api.qhsou.com/api/sjsp.php?type=all"
+method = "get"
+return_type = "json"
+description = "获取随机视频(all:随机、sister:小姐姐、tianmei:甜妹、meitui:美腿)"
+send_type = "base64"
+
+[api."星座"]
+url = "https://api.pearktrue.cn/api/xzys/"
+method = "get"
+return_type = "json"
+description = "获取星座运势"
+
+[api."狱卒"]
+url = "http://api.yujn.cn/api/jpmt.php"
+method = "get"
+params = { "type" = "video" }
+return_type = "video"
+description = "获取狱卒视频"
+
+[api."帅哥"]
+url = "http://api.yujn.cn/api/xgg.php"
+method = "get"
+params = { "type" = "video" }
+return_type = "video"
+description = "获取帅哥视频"
+
+[api."腹肌"]
+url = "http://api.yujn.cn/api/fujiimg.php"
+method = "get"
+return_type = "img"
+description = "获取腹肌图片"
+
+[api."短剧"]
+url = "https://www.hhlqilongzhu.cn/api/duanju_fanqie.php"
+method = "get"
+params = { "name" = "" }
+return_type = "json"
+description = "搜索短剧"
+
+# 新增小说搜索API
+[api."小说"]
+url = "https://www.hhlqilongzhu.cn/api/novel_1.php"
+method = "get"
+return_type = "json"
+description = "搜索小说信息，可根据关键词或书名查询"
+
+[api."运势占卜"]
+url = "https://www.hhlqilongzhu.cn/api/tu_yunshi.php"
+method = "get"
+return_type = "img"
+description = "随机获取运势占卜图片" 

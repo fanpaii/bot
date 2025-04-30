@@ -1,0 +1,25 @@
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# 临时文件
+temp/
+*.tmp
+
+# 日志文件
+*.log
+
+# 个人配置文件 (保留默认配置)
+# config.toml
+
+# IDE文件
+.idea/
+.vscode/
+*.swp
+*.swo 

@@ -1,0 +1,30 @@
+# 管理员管理插件命令映射配置
+
+[[commands]]
+name = "添加管理"
+description = "添加群管理员"
+usage = "添加管理 <用户名> 或 添加管理@用户"
+aliases = ["加管理"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+
+[[commands]]
+name = "删除管理"
+description = "移除群管理员"
+usage = "删除管理 <用户名> 或 删除管理@用户"
+aliases = ["移除管理", "撤销管理"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+
+[[commands]]
+name = "管理列表"
+description = "显示当前群的管理员列表"
+usage = "管理列表"
+aliases = ["列出管理", "查看管理员"]
+group = "管理命令"
+hidden = false
+prefix_required = false 

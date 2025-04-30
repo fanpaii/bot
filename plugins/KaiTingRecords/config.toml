@@ -1,0 +1,29 @@
+[basic]
+# 是否启用插件
+enable = true
+
+# 定时提醒配置（开厅前几分钟提醒）
+reminder_minutes = 10
+
+[commands]
+# 插件指令配置
+enable_kaiting = "启用开厅记录"
+disable_kaiting = "禁用开厅记录"
+register_hall = "厅名注册"
+set_hall_time = "开厅时间"
+set_temp_time = "临时时间"
+hall_open = "开厅"
+hall_close = "关厅"
+set_duration = "设置开厅时长"
+list_halls = "列出厅名"
+help_command = "开厅记录帮助"
+query_records = "查开厅记录"
+set_reminder_time = "设置提醒时间"
+list_reminders = "开厅提醒列表"
+remove_reminder = "取消提醒"
+delete_hall = "删除厅名"
+list_all_halls = "列出所有厅名"
+query_user_hall = "查询厅"
+list_active_halls = "查看营业中厅"
+list_inactive_halls = "查看未营业厅"
+admin_close_hall = "关闭指定厅" 

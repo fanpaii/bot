@@ -1,0 +1,6 @@
+aiohttp>=3.8.0
+tomli>=2.0.0; python_version < "3.11"
+tomli_w>=1.0.0
+Pillow>=8.4.0
+loguru>=0.6.0
+urllib3>=1.26.0 

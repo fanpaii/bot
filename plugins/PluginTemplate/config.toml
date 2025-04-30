@@ -1,0 +1,19 @@
+[basic]
+# 是否启用插件
+enable = false
+# 触发关键词
+trigger_keyword = "你好"
+
+# 其他配置示例
+[other_section]
+# 其他配置选项
+other_option = "默认值"
+
+# 功能特定配置示例 
+[feature]
+# 是否启用某功能
+enable = true
+# 功能参数
+parameter = "value"
+# 功能列表参数
+list_parameter = ["item1", "item2", "item3"] 

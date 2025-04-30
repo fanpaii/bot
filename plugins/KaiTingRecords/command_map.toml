@@ -1,0 +1,247 @@
+# 开厅记录插件命令映射配置
+
+[[commands]]
+name = "开厅记录帮助"
+description = "显示开厅记录插件的帮助信息"
+usage = "开厅记录帮助"
+aliases = ["开厅帮助", "厅帮助"]
+group = "基础命令"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "启用开厅记录"
+description = "启用群聊开厅记录功能"
+usage = "启用开厅记录"
+aliases = ["启用开厅"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+
+[[commands]]
+name = "禁用开厅记录"
+description = "禁用群聊开厅记录功能"
+usage = "禁用开厅记录"
+aliases = ["禁用开厅"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+
+[[commands]]
+name = "厅名注册"
+description = "注册一个新的厅"
+usage = "厅名注册 <厅名>"
+aliases = ["注册厅名"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "厅名", required = true}
+]
+
+[[commands]]
+name = "开厅时间"
+description = "设置厅的开放时间"
+usage = "开厅时间 <厅名> <开始时间>-<结束时间>"
+aliases = ["设置时间"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "厅名", required = true},
+    {name = "时间范围", pattern = "(\\d{1,2}([:\\.]\\d{1,2})?-\\d{1,2}([:\\.]\\d{1,2})?)", required = true}
+]
+
+[[commands]]
+name = "临时时间"
+description = "设置厅的临时开放时间，优先级高于固定时间"
+usage = "临时时间 <厅名> <开始时间>-<结束时间>"
+aliases = ["今日时间"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "厅名", required = true},
+    {name = "时间范围", pattern = "(\\d+(?:[:.][0-9]+)?\\s*-\\s*\\d+(?:[:.][0-9]+)?)", required = true}
+]
+
+[[commands]]
+name = "开厅"
+description = "标记厅已开始营业"
+usage = "开厅 [厅名]"
+aliases = ["营业"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "厅名", required = false}
+]
+
+[[commands]]
+name = "关厅"
+description = "标记厅已结束营业"
+usage = "关厅 [厅名]"
+aliases = ["停业"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "厅名", required = false}
+]
+
+[[commands]]
+name = "设置开厅时长"
+description = "设置开厅最低时长要求"
+usage = "设置开厅时长 <时长(分钟)>"
+aliases = ["开厅时长"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+parameters = [
+    {name = "时长", pattern = "\\d+", required = true}
+]
+
+[[commands]]
+name = "列出厅名"
+description = "列出当前群聊中的所有厅"
+usage = "列出厅名"
+aliases = ["厅名列表", "查看厅名"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "查开厅记录"
+description = "查询开厅记录"
+usage = "查开厅记录 [年-月]"
+aliases = ["开厅记录", "查询开厅"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "日期", pattern = "(\\d{4})-(\\d{1,2})(-(\\d{1,2}))?", required = false}
+]
+
+[[commands]]
+name = "设置提醒时间"
+description = "设置开厅前提醒时间"
+usage = "设置提醒时间 <分钟>"
+aliases = ["提醒时间"]
+group = "提醒管理"
+hidden = false
+prefix_required = false
+admin_only = true
+parameters = [
+    {name = "分钟", pattern = "\\d+", required = true}
+]
+
+[[commands]]
+name = "开厅提醒列表"
+description = "显示当前设置的开厅提醒"
+usage = "开厅提醒列表"
+aliases = ["提醒列表"]
+group = "提醒管理"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "取消提醒"
+description = "取消特定的开厅提醒"
+usage = "取消提醒 <序号>"
+aliases = ["删除提醒"]
+group = "提醒管理"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "序号", pattern = "\\d+", required = true}
+]
+
+[[commands]]
+name = "删除厅名"
+description = "删除群聊中的厅"
+usage = "删除厅名 <厅名>"
+aliases = ["删厅名"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+parameters = [
+    {name = "厅名", required = true}
+]
+
+[[commands]]
+name = "列出所有厅名"
+description = "列出所有群聊中的厅"
+usage = "列出所有厅名"
+aliases = ["所有厅名"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+
+[[commands]]
+name = "删"
+description = "删除厅名确认命令"
+usage = "删 <序号>"
+group = "厅管理命令"
+hidden = true
+prefix_required = false
+parameters = [
+    {name = "序号", pattern = "\\d+", required = true}
+]
+
+[[commands]]
+name = "查询厅"
+description = "查询用户在该群注册的厅信息"
+usage = "查询厅"
+aliases = ["我的厅", "我的厅名"]
+group = "厅管理命令"
+hidden = false
+prefix_required = false
+
+[[commands]]
+name = "查看营业中厅"
+description = "列出所有正在营业中的厅(仅管理员可用)"
+usage = "查看营业中厅"
+aliases = ["营业中的厅", "正在营业的厅"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+
+[[commands]]
+name = "查看未营业厅"
+description = "列出所有当前未营业的厅(仅管理员可用)"
+usage = "查看未营业厅"
+aliases = ["未营业的厅", "关闭的厅"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+
+[[commands]]
+name = "关闭指定厅"
+description = "管理员结束指定厅的营业(仅管理员可用)"
+usage = "关闭指定厅 <厅ID> 或 关闭指定厅 <群ID> <厅名>"
+aliases = ["强制关厅"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true
+parameters = [
+    {name = "厅ID", required = false},
+    {name = "群ID", required = false},
+    {name = "厅名", required = false}
+]
+
+[[commands]]
+name = "检查补全厅ID"
+description = "检查所有厅记录并为缺少唯一ID的厅生成ID(仅管理员可用)"
+usage = "检查补全厅ID"
+aliases = ["补全厅ID", "检查厅ID"]
+group = "管理命令"
+hidden = false
+prefix_required = false
+admin_only = true 

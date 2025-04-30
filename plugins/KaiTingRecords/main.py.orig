@@ -1,0 +1,753 @@
+import os
+import re
+import tomllib
+import datetime
+import asyncio
+from typing import Optional, Tuple, Dict
+from datetime import timedelta
+import time
+
+from loguru import logger
+from WechatAPI import WechatAPIClient
+from utils.plugin_base import PluginBase
+from utils.decorators import on_text_message, schedule
+from utils.admin_manager import admin_manager
+
+from .db_models import KaiTingDB
+
+
+class KaiTingRecords(PluginBase):
+    """开厅记录插件"""
+    description = "群聊开厅记录管理插件"
+    author = "XYBot开发团队"
+    version = "1.0.0"
+    
+    def __init__(self):
+        super().__init__()
+        
+        # 基本信息
+        self.description = "微信群聊开厅记录管理插件"
+        self.author = "XYBotDev"
+        self.version = "1.0.0"
+        
+        # 配置日志
+        self.log_info("开厅记录插件初始化中...")
+        
+        # 读取配置
+        try:
+            with open("plugins/KaiTingRecords/config.toml", "rb") as f:
+                config = tomllib.load(f)
+                basic_conf = config.get("basic", {})
+                commands_conf = config.get("commands", {})
+        except Exception as e:
+            self.log_error(f"读取配置文件失败: {str(e)}")
+            # 使用默认配置
+            basic_conf = {}
+            commands_conf = {}
+        
+        # 命令配置，从配置文件读取，不存在则使用默认值
+        self.cmd_open = commands_conf.get("open", "#开厅")
+        self.cmd_close = commands_conf.get("close", "#关厅")
+        self.cmd_register = commands_conf.get("register", "#注册厅名")
+        self.cmd_set_time = commands_conf.get("set_time", "#设置时间")
+        self.cmd_temp_time = commands_conf.get("temp_time", "#临时时间")
+        self.cmd_list_halls = commands_conf.get("list_halls", "#厅名列表")
+        self.cmd_query = commands_conf.get("query", "#查询开厅")
+        self.cmd_enable = commands_conf.get("enable", "#启用开厅记录")
+        self.cmd_disable = commands_conf.get("disable", "#禁用开厅记录")
+        self.cmd_set_duration = commands_conf.get("set_duration", "#设置时长")
+        self.cmd_set_reminder = commands_conf.get("set_reminder", "#设置提醒")
+        self.cmd_help = commands_conf.get("help", "#开厅帮助")
+        
+        # 提醒时间配置
+        self.remind_before_minutes = basic_conf.get("reminder_minutes", 15)
+        self.log_info(f"设置开厅前{self.remind_before_minutes}分钟提醒")
+        
+        # 存储任务的字典
+        self.reminder_tasks = {}
+        
+        # 数据库初始化
+        try:
+            with open("main_config.toml", "rb") as f:
+                main_config = tomllib.load(f)
+            database_conf = main_config.get("XYBot", {}).get("XYBotDB-url", "")
+            self.db = KaiTingDB()
+        except Exception as e:
+            self.log_error(f"数据库初始化失败: {str(e)}")
+            self.db = None
+        
+        # 初始化命令映射表
+        self.commands = {
+            self.cmd_open: {
+                "func": self.handle_open,
+                "description": "记录开厅时间"
+            },
+            self.cmd_close: {
+                "func": self.handle_close,
+                "description": "记录关厅时间"
+            },
+            self.cmd_register: {
+                "func": self.handle_register,
+                "description": "注册厅名",
+                "pattern": r"^" + re.escape(self.cmd_register) + r"\s+(.+)$"
+            },
+            self.cmd_set_time: {
+                "func": self.handle_set_time,
+                "description": "设置开厅时间",
+                "pattern": r"^" + re.escape(self.cmd_set_time) + r"\s+(.+?)\s+(\d+\.?\d*)-(\d+\.?\d*)$"
+            },
+            self.cmd_temp_time: {
+                "func": self.handle_temp_time,
+                "description": "设置临时开厅时间",
+                "pattern": r"^" + re.escape(self.cmd_temp_time) + r"\s+(.+?)\s+(\d+\.?\d*)-(\d+\.?\d*)$"
+            },
+            self.cmd_list_halls: {
+                "func": self.handle_list_halls,
+                "description": "列出群聊中所有注册的厅"
+            },
+            self.cmd_query: {
+                "func": self.handle_query,
+                "description": "查询开厅记录",
+                "pattern": r"^" + re.escape(self.cmd_query) + r"(?:\s+(\d+)-(\d+))?$"
+            },
+            self.cmd_enable: {
+                "func": self.handle_enable_group,
+                "description": "启用开厅记录功能",
+                "admin_required": True
+            },
+            self.cmd_disable: {
+                "func": self.handle_disable_group,
+                "description": "禁用开厅记录功能",
+                "admin_required": True
+            },
+            self.cmd_set_duration: {
+                "func": self.handle_set_duration,
+                "description": "设置要求开厅时长",
+                "pattern": r"^" + re.escape(self.cmd_set_duration) + r"\s+(\d+)$",
+                "admin_required": True
+            },
+            self.cmd_set_reminder: {
+                "func": self.handle_set_reminder,
+                "description": "设置开厅提醒时间",
+                "pattern": r"^" + re.escape(self.cmd_set_reminder) + r"\s+(\d+)$",
+                "admin_required": True
+            },
+            self.cmd_help: {
+                "func": self.handle_help,
+                "description": "显示帮助信息"
+            }
+        }
+        
+        # 保存bot引用
+        self.bot = None
+        
+        self.log_info("开厅记录插件初始化完成")
+    
+    def log_info(self, message):
+        """记录信息日志"""
+        logger.info(f"[开厅记录插件] {message}")
+    
+    def log_error(self, message, exc_info=False):
+        """记录错误日志"""
+        logger.error(f"[开厅记录插件] {message}", exc_info=exc_info)
+    
+    def log_warning(self, message):
+        """记录警告日志"""
+        logger.warning(f"[开厅记录插件] {message}")
+    
+    def log_debug(self, message):
+        """记录调试日志"""
+        logger.debug(f"[开厅记录插件] {message}")
+
+    async def async_init(self):
+        """异步初始化方法"""
+        # 存在数据库，则初始化表
+        if self.db:
+            await self.db.init_tables()
+            self.log_info("数据库表初始化完成")
+            
+        # 初始化定时任务
+        await self.setup_all_hall_reminders()
+        
+        self.log_info("开厅记录插件异步初始化完成")
+    
+    async def on_text_message(self, bot: WechatAPIClient, msg_id: int, create_time: int, chatroom_id: str, sender_wxid: str, content: str):
+        """处理文本消息"""
+        # 记录bot实例
+        self.bot = bot
+        
+        # 获取发送者昵称
+        sender_info = None
+        try:
+            sender_info = await bot.get_member_info(chatroom_id, sender_wxid)
+        except Exception as e:
+            self.log_error(f"获取成员信息失败: {str(e)}")
+        
+        nickname = sender_info.get("nickname", "未知用户") if sender_info else "未知用户"
+        
+        # 命令处理
+        await self.handle_commands(bot, msg_id, create_time, chatroom_id, sender_wxid, content, nickname)
+        
+    async def handle_commands(self, bot: WechatAPIClient, msg_id: int, create_time: int, 
+                          chatroom_id: str, sender_wxid: str, content: str, nickname: str):
+        """处理命令"""
+        # 检查是否为群聊
+        if not chatroom_id or chatroom_id == sender_wxid:
+            return
+        
+        content = content.strip()
+        
+        # 遍历命令映射表处理命令
+        for cmd, cmd_info in self.commands.items():
+            # 简单命令匹配
+            if content == cmd:
+                # 检查管理员权限
+                if cmd_info.get("admin_required", False) and not await self.is_admin(chatroom_id, sender_wxid):
+                    await bot.send_text_message(chatroom_id, f"⚠️ 只有管理员可以执行此操作 (by {nickname})")
+                    return
+                    
+                # 执行命令函数
+                await cmd_info["func"](bot, chatroom_id, sender_wxid, nickname)
+                return
+                
+            # 带参数的命令匹配
+            elif "pattern" in cmd_info:
+                match = re.match(cmd_info["pattern"], content)
+                if match:
+                    # 检查管理员权限
+                    if cmd_info.get("admin_required", False) and not await self.is_admin(chatroom_id, sender_wxid):
+                        await bot.send_text_message(chatroom_id, f"⚠️ 只有管理员可以执行此操作 (by {nickname})")
+                        return
+                        
+                    # 提取参数
+                    args = match.groups()
+                    
+                    # 执行命令函数，传入参数
+                    await cmd_info["func"](bot, chatroom_id, sender_wxid, nickname, *args)
+                    return
+        
+    async def handle_list_halls(self, bot: WechatAPIClient, chatroom_id: str,
+                            sender_wxid: str, nickname: str):
+        """处理查看厅名列表命令"""
+        self.log_info(f"处理查看厅名列表命令: {chatroom_id} - {nickname}")
+        
+        # 检查是否开启了开厅记录
+        if not await self.db.is_group_enabled(chatroom_id):
+            await bot.send_text_message(chatroom_id, "本群未启用开厅记录功能，请先使用「#启用开厅记录」开启")
+            return
+        
+        # 获取群内所有厅名
+        halls = await self.db.get_all_halls(chatroom_id)
+        
+        if not halls:
+            await bot.send_text_message(chatroom_id, f"本群暂无注册厅名，请使用「{self.cmd_register} 厅名」进行注册")
+            return
+        
+        # 构建回复消息
+        response = "📋 本群已注册厅名列表：\n"
+        
+        for i, hall in enumerate(halls):
+            hall_name = hall.get("hall_name")
+            owner_wxid = hall.get("owner_wxid")
+            
+            # 获取厅主昵称
+            owner_info = None
+            try:
+                owner_info = await bot.get_member_info(chatroom_id, owner_wxid)
+            except Exception as e:
+                self.log_error(f"获取成员信息失败: {str(e)}")
+                
+            owner_nickname = owner_info.get("nickname", "未知用户") if owner_info else "未知用户"
+            
+            # 获取厅设置
+            hall_settings = await self.db.get_hall_settings(chatroom_id, hall_name)
+            time_info = ""
+            
+            if hall_settings:
+                # 检查是否有临时时间设置
+                temp_start = hall_settings.get("temp_start_time")
+                temp_end = hall_settings.get("temp_end_time")
+                temp_date = hall_settings.get("temp_date")
+                
+                today = datetime.now().date()
+                temp_date_obj = datetime.fromtimestamp(temp_date).date() if temp_date else None
+                
+                if temp_start and temp_end and temp_date_obj and temp_date_obj == today:
+                    # 使用临时时间
+                    start_hour = int(temp_start)
+                    start_minute = int((temp_start - start_hour) * 60)
+                    end_hour = int(temp_end)
+                    end_minute = int((temp_end - end_hour) * 60)
+                    
+                    formatted_start = f"{start_hour:02d}:{start_minute:02d}"
+                    formatted_end = f"{end_hour:02d}:{end_minute:02d}"
+                    
+                    time_info = f"（今日临时时间: {formatted_start}-{formatted_end}）"
+                else:
+                    # 使用默认时间
+                    start_time = hall_settings.get("start_time")
+                    end_time = hall_settings.get("end_time")
+                    
+                    if start_time and end_time:
+                        start_hour = int(start_time)
+                        start_minute = int((start_time - start_hour) * 60)
+                        end_hour = int(end_time)
+                        end_minute = int((end_time - end_hour) * 60)
+                        
+                        formatted_start = f"{start_hour:02d}:{start_minute:02d}"
+                        formatted_end = f"{end_hour:02d}:{end_minute:02d}"
+                        
+                        time_info = f"（固定时间: {formatted_start}-{formatted_end}）"
+            
+            # 检查是否有未完成的开厅记录
+            current_record = await self.db.get_unfinished_record(chatroom_id, hall_name)
+            status = "🔴 未开厅"
+            
+            if current_record:
+                open_time = current_record.get("open_time")
+                formatted_time = datetime.fromtimestamp(open_time).strftime("%H:%M")
+                status = f"🟢 已开厅（{formatted_time}）"
+            
+            response += f"{i+1}. 「{hall_name}」- {owner_nickname} - {status} {time_info}\n"
+        
+        # 发送回复
+        await bot.send_text_message(chatroom_id, response.strip())
+    
+    async def handle_query(self, bot: WechatAPIClient, chatroom_id: str,
+                       sender_wxid: str, nickname: str, start_days: int = 7, end_days: int = 0):
+        """处理查询开厅记录命令"""
+        self.log_info(f"处理查询开厅记录命令: {chatroom_id} - {nickname} - {start_days}天-{end_days}天")
+        
+        # 检查是否开启了开厅记录
+        if not await self.db.is_group_enabled(chatroom_id):
+            await bot.send_text_message(chatroom_id, "本群未启用开厅记录功能，请先使用「#启用开厅记录」开启")
+            return
+        
+        # 检查参数合理性
+        if start_days < 0 or end_days < 0 or start_days < end_days:
+            await bot.send_text_message(chatroom_id, f"⚠️ 查询参数不合理，请使用正确的天数范围 (by {nickname})")
+            return
+        
+        # 获取时间范围
+        now = datetime.now()
+        end_date = now - timedelta(days=end_days)
+        start_date = now - timedelta(days=start_days)
+        
+        end_timestamp = int(end_date.replace(hour=23, minute=59, second=59).timestamp())
+        start_timestamp = int(start_date.replace(hour=0, minute=0, second=0).timestamp())
+        
+        # 获取记录
+        records = await self.db.get_records_by_time_range(chatroom_id, start_timestamp, end_timestamp)
+        
+        if not records:
+            time_range = f"最近{start_days}天" if end_days == 0 else f"{end_days}天前至{start_days}天前"
+            await bot.send_text_message(chatroom_id, f"⚠️ {time_range}内没有开厅记录 (by {nickname})")
+            return
+        
+        # 按厅名和日期分组
+        grouped_records = {}
+        for record in records:
+            hall_name = record.get("hall_name")
+            open_time = record.get("open_time")
+            record_date = datetime.fromtimestamp(open_time).strftime("%m-%d")
+            
+            if hall_name not in grouped_records:
+                grouped_records[hall_name] = {}
+                
+            if record_date not in grouped_records[hall_name]:
+                grouped_records[hall_name][record_date] = []
+                
+            grouped_records[hall_name][record_date].append(record)
+        
+        # 获取时长要求
+        required_duration = await self.db.get_group_setting(chatroom_id, "required_duration")
+        required_duration = required_duration or 0
+        
+        # 构建回复消息
+        time_range = f"最近{start_days}天" if end_days == 0 else f"{end_days}天前至{start_days}天前"
+        response = f"📊 {time_range}开厅记录统计：\n\n"
+        
+        for hall_name, dates in grouped_records.items():
+            response += f"【{hall_name}】\n"
+            
+            # 按日期排序
+            sorted_dates = sorted(dates.keys(), key=lambda d: datetime.strptime(d, "%m-%d"), reverse=True)
+            
+            for date in sorted_dates:
+                daily_records = dates[date]
+                response += f"- {date}：\n"
+                
+                # 计算当日开厅总时长
+                total_duration = 0
+                count_valid = 0
+                
+                for record in daily_records:
+                    open_time = record.get("open_time")
+                    close_time = record.get("close_time")
+                    
+                    # 如果没有关厅，使用当前时间
+                    if not close_time:
+                        close_time = int(time.time())
+                        
+                    duration = close_time - open_time
+                    total_duration += duration
+                    
+                    # 检查是否达标
+                    if required_duration > 0 and duration >= required_duration * 60:
+                        count_valid += 1
+                    
+                    # 格式化时间
+                    open_formatted = datetime.fromtimestamp(open_time).strftime("%H:%M")
+                    close_formatted = "进行中" if not record.get("close_time") else datetime.fromtimestamp(close_time).strftime("%H:%M")
+                    
+                    # 计算时长
+                    duration_seconds = duration
+                    hours = int(duration_seconds // 3600)
+                    minutes = int((duration_seconds % 3600) // 60)
+                    
+                    duration_str = ""
+                    if hours > 0:
+                        duration_str += f"{hours}时"
+                    if minutes > 0 or hours == 0:
+                        duration_str += f"{minutes}分"
+                        
+                    # 添加记录
+                    status = "✅" if not required_duration or duration >= required_duration * 60 else "❌"
+                    response += f"  {status} {open_formatted}-{close_formatted} ({duration_str})\n"
+                
+                # 添加日汇总
+                total_hours = int(total_duration // 3600)
+                total_minutes = int((total_duration % 3600) // 60)
+                
+                total_str = ""
+                if total_hours > 0:
+                    total_str += f"{total_hours}时"
+                if total_minutes > 0 or total_hours == 0:
+                    total_str += f"{total_minutes}分"
+                    
+                valid_text = f", 达标{count_valid}/{len(daily_records)}次" if required_duration > 0 else ""
+                response += f"  总计: {total_str}{valid_text}\n"
+        
+        # 发送回复
+        await bot.send_text_message(chatroom_id, response.strip())
+    
+    async def handle_help(self, bot: WechatAPIClient, chatroom_id: str,
+                      sender_wxid: str, nickname: str):
+        """处理帮助命令"""
+        self.log_info(f"处理帮助命令: {chatroom_id} - {nickname}")
+        
+        # 构建帮助信息
+        help_text = f"""📋 开厅记录插件帮助
+
+基本命令：
+{self.cmd_open} - 开始记录开厅
+{self.cmd_close} - 结束记录开厅
+{self.cmd_list_halls} - 查看已注册厅名列表
+{self.cmd_query} - 查询最近7天开厅记录
+{self.cmd_query} 14-7 - 查询7-14天前的开厅记录
+
+厅名管理：
+{self.cmd_register} 厅名 - 注册新厅名
+{self.cmd_set_time} 厅名 时间-时间 - 设置固定开厅时间
+例如：{self.cmd_set_time} 123厅 14.5-17.0 设置14:30-17:00
+
+临时设置：
+{self.cmd_temp_time} 厅名 时间-时间 - 设置今日临时开厅时间
+
+管理员设置：
+{self.cmd_enable} - 启用群聊开厅记录功能
+{self.cmd_disable} - 禁用群聊开厅记录功能
+{self.cmd_set_duration} 分钟 - 设置开厅时长要求
+{self.cmd_set_reminder} 分钟 - 设置开厅提醒时间（默认{self.remind_before_minutes}分钟）
+
+❓ 使用有任何问题，请联系管理员
+"""
+        
+        # 发送回复
+        await bot.send_text_message(chatroom_id, help_text)
+    
+    async def handle_set_reminder(self, bot: WechatAPIClient, chatroom_id: str,
+                              sender_wxid: str, nickname: str, minutes: int):
+        """处理设置提醒时间命令"""
+        self.log_info(f"处理设置提醒时间命令: {chatroom_id} - {nickname} - {minutes}分钟")
+        
+        # 检查是否启用了功能
+        if not await self.db.is_group_enabled(chatroom_id):
+            await bot.send_text_message(chatroom_id, "本群未启用开厅记录功能，请先使用「#启用开厅记录」开启")
+            return
+            
+        # 检查时间是否合理
+        try:
+            minutes = int(minutes)
+            if minutes < 5 or minutes > 120:  # 5分钟到2小时之间
+                await bot.send_text_message(chatroom_id, f"⚠️ 提醒时间设置不合理，请设置5-120分钟之间的值 (by {nickname})")
+                return
+        except ValueError:
+            await bot.send_text_message(chatroom_id, f"⚠️ 提醒时间必须是一个整数 (by {nickname})")
+            return
+            
+        try:
+            # 更新设置
+            self.remind_before_minutes = minutes
+            await self.db.set_group_setting(chatroom_id, "reminder_minutes", minutes)
+            
+            # 更新所有提醒任务
+            await self.update_all_hall_reminders()
+            
+            # 发送回复
+            await bot.send_text_message(chatroom_id, f"✅ 已设置开厅提醒时间为{minutes}分钟 (by {nickname})")
+        except Exception as e:
+            self.log_error(f"设置提醒时间失败: {str(e)}")
+            await bot.send_text_message(chatroom_id, f"❌ 设置提醒时间失败: {str(e)}")
+    
+    def _parse_time_string(self, time_str: str) -> float:
+        """解析时间字符串为浮点数，例如：14.5 -> 14.5（表示14:30）"""
+        try:
+            time_float = float(time_str)
+            if time_float < 0 or time_float >= 24:
+                raise ValueError("时间必须在0-24之间")
+            return time_float
+        except ValueError:
+            raise ValueError(f"无法解析时间字符串: {time_str}")
+    
+    async def setup_all_hall_reminders(self, chatroom_id: str = None):
+        """设置所有厅的提醒任务"""
+        try:
+            # 获取所有已启用的群聊
+            if chatroom_id:
+                enabled_groups = [{"chatroom_id": chatroom_id}]
+            else:
+                enabled_groups = await self.db.get_enabled_groups()
+            
+            for group in enabled_groups:
+                group_id = group["chatroom_id"]
+                
+                # 获取该群聊所有厅
+                all_halls = await self.db.get_all_halls(group_id)
+                
+                # 为每个厅设置提醒任务
+                for hall in all_halls:
+                    # 不设置已开厅的厅的提醒任务
+                    if hall.get("is_active", False):
+                        continue
+                        
+                    await self.setup_hall_reminder(group_id, hall)
+                
+                self.log_info(f"已为群 {group_id} 的 {len(all_halls)} 个厅设置提醒任务")
+        except Exception as e:
+            self.log_error(f"设置提醒任务失败: {str(e)}")
+    
+    async def update_all_hall_reminders(self):
+        """更新所有厅的提醒任务"""
+        try:
+            # 取消所有任务
+            for task_key, task in list(self.reminder_tasks.items()):
+                task.cancel()
+                self.log_info(f"已取消提醒任务: {task_key}")
+            self.reminder_tasks.clear()
+            
+            # 重新设置所有任务
+            await self.setup_all_hall_reminders()
+        except Exception as e:
+            self.log_error(f"更新所有提醒任务失败: {str(e)}")
+    
+    async def setup_hall_reminder(self, chatroom_id: str, hall_info: dict):
+        """为指定厅设置提醒任务"""
+        if not hall_info:
+            self.log_info("厅信息为空，无法设置提醒任务")
+            return
+            
+        # 检查厅是否已经开厅
+        if hall_info.get("is_active", False):
+            self.log_info(f"厅 {hall_info.get('hall_name')} 已开厅，不需要设置提醒")
+            return
+        
+        try:
+            # 获取必要信息
+            hall_name = hall_info.get("hall_name", "")
+            owner_wxid = hall_info.get("owner_wxid", "")
+            owner_nickname = hall_info.get("owner_nickname", "")
+            
+            # 检查必要的键是否存在
+            if not owner_wxid:
+                self.log_error(f"厅 {hall_name} 的所有者ID不存在，无法设置提醒")
+                return
+                
+            # 获取时间信息，先检查是否有临时时间
+            now = datetime.datetime.now()
+            today = now.date()
+            
+            # 创建任务键名
+            task_key = f"{today.strftime('%Y%m%d')}_{chatroom_id}_{hall_name}"
+            
+            # 如果任务已存在，先取消
+            if task_key in self.reminder_tasks:
+                await self.cancel_reminder_task(task_key)
+            
+            # 检查是否有临时时间设置
+            if hall_info.get("has_temp_time", False):
+                time_type = "临时"
+                # 使用临时时间
+                if "temp_time_start" not in hall_info:
+                    self.log_error(f"厅 {hall_name} 的临时开始时间不存在，无法设置提醒")
+                    return
+                open_time_start = hall_info["temp_time_start"]
+            else:
+                time_type = "常规"
+                # 使用常规时间
+                if "regular_time_start" not in hall_info:
+                    self.log_error(f"厅 {hall_name} 的常规开始时间不存在，无法设置提醒")
+                    return
+                open_time_start = hall_info["regular_time_start"]
+            
+            # 计算提醒时间
+            reminder_time = self._time_minus_minutes(open_time_start, self.remind_before_minutes)
+            reminder_datetime = datetime.datetime.combine(today, reminder_time)
+            
+            # 计算距离提醒时间的秒数
+            now = datetime.datetime.now()
+            if now < reminder_datetime:
+                delay_seconds = (reminder_datetime - now).total_seconds()
+            else:
+                # 如果当前时间已经超过提醒时间，检查是否还在开厅时间之前
+                open_datetime = datetime.datetime.combine(today, open_time_start)
+                if now > open_datetime:
+                    self.log_info(f"厅 {hall_name} 的开厅时间 {open_time_start} 已过，不设置提醒")
+                else:
+                    # 如果现在时间在提醒时间和开厅时间之间，马上发送提醒
+                    self.log_info(f"厅 {hall_name} 的提醒时间已过但开厅时间未到，立即发送提醒")
+                    await self._send_hall_time_reminder(
+                        chatroom_id, hall_name, owner_wxid, owner_nickname, open_time_start, time_type
+                    )
+                return
+            
+            # 创建定时任务
+            task = asyncio.create_task(
+                self._reminder_task(
+                    chatroom_id, hall_name, owner_wxid, owner_nickname,
+                    open_time_start, time_type, delay_seconds
+                )
+            )
+            
+            # 保存任务引用
+            self.reminder_tasks[task_key] = task
+            
+            self.log_info(f"已为厅 {hall_name} 设置提醒任务，将在 {reminder_datetime} 提醒（延迟{int(delay_seconds)}秒）")
+        except Exception as e:
+            self.log_error(f"为厅 {hall_info.get('hall_name', '未知厅')} 设置提醒任务失败: {str(e)}", exc_info=True)
+    
+    async def _reminder_task(self, chatroom_id: str, hall_name: str, owner_wxid: str, 
+                           owner_nickname: str, open_time: datetime.time, time_type: str, 
+                           delay_seconds: float):
+        """执行提醒任务"""
+        try:
+            # 等待指定秒数后执行
+            await asyncio.sleep(delay_seconds)
+            
+            # 发送提醒消息
+            await self._send_hall_time_reminder(
+                chatroom_id, hall_name, owner_wxid, owner_nickname, open_time, time_type
+            )
+            
+            # 清理任务
+            today = datetime.date.today()
+            task_key = f"{today.strftime('%Y%m%d')}_{chatroom_id}_{hall_name}"
+            if task_key in self.reminder_tasks:
+                del self.reminder_tasks[task_key]
+        except asyncio.CancelledError:
+            # 任务被取消
+            self.log_info(f"厅 {hall_name} 的提醒任务被取消")
+        except Exception as e:
+            self.log_error(f"执行提醒任务失败: {str(e)}")
+        finally:
+            # 清理任务引用
+            today = datetime.date.today()
+            task_key = f"{today.strftime('%Y%m%d')}_{chatroom_id}_{hall_name}"
+            if task_key in self.reminder_tasks:
+                del self.reminder_tasks[task_key]
+    
+    async def _send_hall_time_reminder(self, chatroom_id: str, hall_name: str, owner_wxid: str, 
+                                     owner_nickname: str, open_time: datetime.time, time_type: str):
+        """发送厅开厅时间提醒"""
+        if not self.bot:
+            self.log_error("无法发送提醒：bot引用不存在")
+            return
+            
+        try:
+            # 检查厅是否还存在
+            hall_info = self.db.get_hall_by_name(chatroom_id, hall_name)
+            if not hall_info:
+                self.log_info(f"厅 {hall_name} 不存在，取消提醒")
+                return
+                
+            # 检查厅是否已开厅
+            if hall_info.get("is_active", False):
+                self.log_info(f"厅 {hall_name} 已开厅，取消提醒")
+                return
+                
+            # 格式化开厅时间
+            open_time_str = open_time.strftime("%H:%M")
+            
+            # 发送提醒消息
+            reminder_text = (
+                f"🔔 开厅提醒\n"
+                f"━━━━━━━━━━━━━━━━\n"
+                f"📝 厅名: {hall_name}\n"
+                f"👤 厅主: {owner_nickname}\n"
+                f"⏰ 开厅时间: {open_time_str} ({time_type})\n"
+                f"还有 {self.remind_before_minutes} 分钟就要开厅了，请做好准备！"
+            )
+            
+            # 先在群里@厅主
+            await self.bot.send_at_message(
+                chatroom_id,
+                reminder_text,
+                [owner_wxid]
+            )
+            
+            self.log_info(f"已发送开厅前提醒: 群:{chatroom_id}, 厅:{hall_name}, 开厅时间:{open_time_str}")
+        except Exception as e:
+            self.log_error(f"发送开厅提醒失败: {e}", exc_info=True)
+    
+    async def cancel_hall_reminder(self, chatroom_id: str, hall_name: str):
+        """取消指定厅的提醒任务"""
+        try:
+            today = datetime.date.today()
+            task_key = f"{today.strftime('%Y%m%d')}_{chatroom_id}_{hall_name}"
+            await self.cancel_reminder_task(task_key)
+        except Exception as e:
+            self.log_error(f"取消厅 {hall_name} 的提醒任务失败: {str(e)}")
+    
+    async def cancel_reminder_task(self, task_key: str):
+        """取消提醒任务"""
+        try:
+            if task_key in self.reminder_tasks:
+                # 取消任务
+                task = self.reminder_tasks[task_key]
+                task.cancel()
+                
+                # 等待任务取消
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                
+                # 移除任务引用
+                del self.reminder_tasks[task_key]
+                self.log_info(f"已取消提醒任务: {task_key}")
+        except Exception as e:
+            self.log_error(f"取消提醒任务失败: {str(e)}")
+    
+    def _time_minus_minutes(self, time_obj: datetime.time, minutes: int) -> datetime.time:
+        """计算时间减去指定分钟数"""
+        dt = datetime.datetime.combine(datetime.date.today(), time_obj) - datetime.timedelta(minutes=minutes)
+        return dt.time()
+
+    async def is_admin(self, chatroom_id: str, wxid: str) -> bool:
+        """检查用户是否为管理员"""
+        try:
+            # 使用admin_manager检查
+            return admin_manager.is_admin(wxid)
+        except Exception as e:
+            self.log_error(f"检查管理员权限失败: {str(e)}")
+            return False 

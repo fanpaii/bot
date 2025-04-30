@@ -1,0 +1,34 @@
+# 麦序管理插件配置文件
+
+[basic]
+# 是否默认启用插件
+enable = true
+# 插件描述
+description = "麦序管理插件，用于管理群聊麦序表和排档"
+# 插件版本
+version = "1.0.0"
+# 插件作者
+author = "XYBotV2"
+
+[commands]
+# 基础命令
+enable = "启用麦序"
+disable = "禁用麦序"
+query_settings = "查询设置数据"
+
+# 设置命令
+set_start_minute = "麦序开始分钟"  # 用法: 麦序开始分钟 40
+set_end_minute = "麦序截止分钟"    # 用法: 麦序截止分钟 58
+set_buffer_time = "补位时间"      # 用法: 补位时间 10
+set_max_slots = "扣排人数"        # 用法: 扣排人数 8
+set_host = "设置主持"            # 用法: 设置主持\n0-2 主持人A\n2-4 主持人B
+set_maike_doc = "麦序文档"       # 用法: 麦序文档\n文档内容...
+query_maike_doc = "查询麦序文档"  # 用法: 查询麦序文档
+
+# 统计命令
+query_maike_statistics = "查询麦序统计"  # 用法: 查询麦序统计 [天数]
+query_black_maike = "查询黑麦统计"  # 用法: 查询黑麦统计 [天数]
+
+# 排档关键词
+register_keywords = ["p", "排", "P"]  # 用户发送这些关键词可以排档
+force_set_maike = ["设麦序", "补"]  # 管理员@用户并发送这些关键词可以强制设置麦序 
